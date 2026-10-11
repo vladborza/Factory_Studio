@@ -1,0 +1,58 @@
+import {COMMERCIAL} from './references.js';
+import {initializeProvenance} from '../../core/provenance.js';
+import{node,uid}from '../../core/model.js';
+const template=(id,name,category,type,description,cycle,attributes=[])=>({id,name,category,type,description,cycle,attributes:attributes.map(([name,value,unit=''])=>({name,value:String(value),unit})),source:'Profil generic configurabil',assumption:'Timpi și costuri demonstrative; necesită măsurare și calibrare.'});
+const GENERIC=[
+ template('mill3','Centru CNC vertical · 3 axe','Prelucrare','machine','Frezare, găurire și alezare; operația folosește mașina ca resursă.',180,[['Axe',3],['Spindle nominal',8000,'rpm'],['Prindere','Menghină / fixture']]),
+ template('mill5','Centru CNC · 5 axe','Prelucrare','machine','Prelucrare simultană 5 axe; timpii CAM se introduc în operație.',300,[['Axe',5]]),
+ template('lathe','Strung CNC','Prelucrare','machine','Strunjire și operații axiale.',120,[['Configurație','2 axe + opțiuni']]),
+ template('millmanual','Freză convențională','Prelucrare','machine','Mașină deservită de operator pe durata ciclului.',240),
+ template('drill','Mașină de găurit','Prelucrare','machine','Găurire cu dispozitiv de poziționare.',45),
+ template('grind','Rectificare plană','Prelucrare','machine','Rectificare și finisare.',240),
+ template('edm','Electroeroziune EDM','Prelucrare','machine','EDM cu electrod; timp și consum de electrozi configurabile.',600),
+ template('wireedm','Electroeroziune cu fir','Prelucrare','machine','Tăiere prin electroeroziune.',900),
+ template('laser','Tăiere laser','Prelucrare','machine','Tăiere 2D; loturile sunt aproximabile prin timp per piesă.',90),
+ template('press','Presă hidraulică','Formare & asamblare','machine','Presare/sertizare; forța este atribut descriptiv.',30,[['Forță nominală',100,'kN']]),
+ template('injection','Injecție mase plastice','Formare & asamblare','machine','Ciclu per piesă echivalent; multicavitatea nu este calculată automat.',60),
+ template('weld','Celulă sudare','Formare & asamblare','machine','Sudare cu fixture și consumabile.',75),
+ template('torque','Înșurubare cu control cuplu','Formare & asamblare','tool','Dispozitiv de strângere cu rezultat urmărit.',20,[['Cuplu țintă',8,'Nm']]),
+ template('robot6','Robot articulat · 6 axe','Roboți','robot','Manipulare, sudare sau machine tending.',25,[['Axe',6],['Payload demonstrativ',20,'kg'],['Reach demonstrativ',1800,'mm']]),
+ template('scara','Robot SCARA','Roboți','robot','Asamblare și pick-and-place în plan.',8,[['Axe',4]]),
+ template('delta','Robot Delta','Roboți','robot','Pick-and-place rapid; rata se calibrează pe aplicație.',2),
+ template('gantry','Robot cartezian / portal','Roboți','robot','Transfer pe axe liniare.',15),
+ template('cobot','Cobot · 6 axe','Roboți','robot','Aplicabilitatea colaborativă necesită evaluarea riscului aplicației.',30,[['Mod colaborativ','Necesită validare aplicație']]),
+ template('pallet','Robot paletizare','Roboți','robot','Paletizare; ciclul este echivalent per unitate manipulată.',12),
+ template('agv','AGV / AMR','Logistică','robot','Resursă de transport partajată, nu simulator de navigație.',60),
+ template('conveyor','Transportor','Logistică','machine','Resursă pentru o operație de transport.',15),
+ template('forklift','Stivuitor','Logistică','machine','Transport cu operator alocat.',90),
+ template('cmm','CMM · control dimensional','Teste & metrologie','inspection','Măsurare coordonate și verificare geometrică.',240,[['Metodă','Contact / scanare'],['Rezultat','Conform/neconform']]),
+ template('vision','Inspecție vizuală automată','Teste & metrologie','inspection','Verificare prezență, orientare, marcaj și defecte vizibile.',8),
+ template('leak','Test etanșeitate','Teste & metrologie','inspection','Presurizare, stabilizare, măsurare scăpări.',45,[['Mărime măsurată','Debit / cădere presiune']]),
+ template('hipot','Test dielectric / HiPot','Teste & metrologie','inspection','Verificarea izolației; tensiunile se definesc din procedura aprobată.',20),
+ template('continuity','Continuitate electrică','Teste & metrologie','inspection','Măsurare rezistență/continuitate.',10),
+ template('ict','In-circuit test · ICT','Teste & metrologie','inspection','Test electric PCB în fixture.',30),
+ template('eol','End-of-line functional test','Teste & metrologie','inspection','Verificare funcțională completă pe produs.',90),
+ template('hil','Hardware-in-the-loop','Teste & metrologie','inspection','Scenariu HIL documentat; nu execută un simulator fizic extern.',180),
+ template('thermal','Ciclu termic','Teste & metrologie','inspection','Ciclu echivalent per piesă; încărcarea pe loturi nu este simulată.',3600),
+ template('vibration','Test vibrații','Teste & metrologie','inspection','Durată, fixture și criterii conform procedurii.',900),
+ template('ndt','Control nedistructiv · UT/PT/MT','Teste & metrologie','inspection','Metoda și criteriul se documentează; fără predicție fizică a defectelor.',300),
+ template('hardness','Test duritate','Teste & metrologie','inspection','Verificare duritate și trasabilitate eșantion.',45),
+ template('plc','PLC de celulă','Control & IT','hardware','Capacitate logică și latență parametrizabile.',60,[['Interfață','I/O / Ethernet industrial']]),
+ template('safetyplc','Safety PLC','Control & IT','hardware','Funcții de siguranță documentate; fără calcul PL/SIL automat.',60),
+ template('mes','Serviciu MES','Control & IT','software','Resursă software cu capacitate simultană și latență.',60),
+ template('vision-sw','Software machine vision','Control & IT','software','Serviciu de procesare imagini cu latență.',60),
+ template('opc','Gateway OPC UA','Control & IT','software','Obiect de arhitectură; nu conectează live utilaje.',60),
+ template('operator','Operator producție','Personal','person','O persoană disponibilă; poate deservi mai multe mașini în competiție.',60),
+ template('cnc-op','Operator CNC','Personal','person','Competență CNC documentată, alocare explicită.',60,[['Competență','Operare CNC']]),
+ template('quality','Inspector calitate','Personal','person','Inspecție și eliberare produs.',60,[['Competență','Metrologie']]),
+ template('maintenance','Tehnician mentenanță','Personal','person','Resursă disponibilă; alocarea la reparații nu este automată.',60),
+ template('fixture','Fixture de test','Dispozitive','tool','Dispozitiv limitat în număr, partajat între operații.',60),
+ template('gripper','Gripper robot','Dispozitive','tool','Efectuator final; compatibilitatea mecanică se verifică separat.',60),
+ template('compressed-air','Aer comprimat','Utilități','utility','Capacitate discretă echivalentă; nu calcul pneumatic.',60),
+ template('component-stock','Stoc subansamble','Materiale','material','Componente produse și consumate între linii.',60),
+ template('requirement','Cerință de capacitate','MBSE','requirement','Definește valoarea țintă, condițiile și metoda de verificare.',60),
+ template('test-case','Caz de verificare','MBSE','testCase','Procedură, criteriu de acceptare și evidență.',60)
+];
+export const CATALOG=[...COMMERCIAL,...GENERIC.map(t=>({...t,commercial:false,cycle:null,attributes:t.attributes.filter(a=>!/^[-+]?\d/.test(a.value)),assumption:'Rol sau proces generic. Date de proces de completat; fără performanțe reale implicite.'}))];
+export function instantiate(t){const el=node(t.type,t.name);el.description=t.description+'\n'+t.assumption;el.attributes=structuredClone(t.attributes||[]);el.specs=structuredClone(t.specs||[]);el.reference=t.commercial?{name:t.name,url:t.source,configuration:t.configuration,checked:t.checked}:null;el.stereotypes=[t.type];el.moflt='T';el.templateId=t.id;initializeProvenance(el);return el}
+export function createCell(model,diagram,t,options={}){const machine=instantiate(t),op=node(t.category==='Teste & metrologie'?'inspection':'operation','Operație · '+t.name);op.params.cycle=options.cycle||60;initializeProvenance(op);if(options.cycle)op.calibration.cycle={status:options.status||'assumption',note:options.note||'Configurat la crearea celulei.'};const person=node('person','Operator · '+t.name),src=node('source','Intrări · '+t.name),out=node('sink','Ieșiri · '+t.name);initializeProvenance(person);initializeProvenance(src);src.params.interval=options.interval||60;const members=[src,op,out,machine,...(options.operator===false?[]:[person])];model.nodes.push(...members);const edge=(type,from,to)=>model.edges.push({id:uid('edge'),type,from,to,quantity:1,weight:1,delay:0});edge('flow',src.id,op.id);edge('flow',op.id,out.id);edge('requires',op.id,machine.id);if(options.operator!==false)edge('staffedBy',machine.id,person.id);const base=diagram.items.length?Math.max(...diagram.items.map(i=>i.y))+250:60;members.forEach((n,i)=>diagram.items.push({nodeId:n.id,x:60+(i<3?i:i-3)*270,y:base+(i<3?0:190)}));return machine.id}

@@ -1,0 +1,9 @@
+*
+!Dockerfile
+!package.json
+!server.mjs
+!dist/
+!dist/**
+!services/
+!services/**
+dist/.openai/

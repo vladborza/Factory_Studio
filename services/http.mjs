@@ -1,0 +1,3 @@
+export const json=(res,status,value)=>{res.writeHead(status,{'Content-Type':'application/json; charset=utf-8','Cache-Control':'no-store','X-Content-Type-Options':'nosniff'});res.end(JSON.stringify(value))};
+export async function body(req,limit=10_000_000){let size=0;const chunks=[];for await(const c of req){size+=c.length;if(size>limit)throw Object.assign(Error('Cerere prea mare.'),{status:413});chunks.push(c)}try{return JSON.parse(Buffer.concat(chunks).toString('utf8'))}catch{throw Object.assign(Error('JSON invalid.'),{status:400})}}
+export function launch(server){server.requestTimeout=65_000;server.listen(Number(process.env.PORT||8080),process.env.HOST||'127.0.0.1')}

@@ -1,0 +1,3 @@
+import http from 'node:http';import{pathToFileURL}from'node:url';import{CATALOG}from'../../dist/features/library/catalog.js';import{json,launch}from'../http.mjs';
+export function createCatalogServer(){return http.createServer((req,res)=>{if(req.method!=='GET')return json(res,405,{error:'GET required'});if(req.url==='/healthz')return json(res,200,{status:'ok',service:'catalog'});if(req.url==='/api/catalog')return json(res,200,{version:'0.4.0',items:CATALOG});json(res,404,{error:'Not found'})})}
+if(process.argv[1]&&import.meta.url===pathToFileURL(process.argv[1]).href)launch(createCatalogServer());

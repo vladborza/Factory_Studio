@@ -1,0 +1,30 @@
+name: Test and Docker build
+on:
+  push:
+  pull_request:
+permissions:
+  contents: read
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: npm test
+      - run: docker build -t factory-studio:test .
+      - name: Smoke test container
+        shell: bash
+        run: |
+          docker run -d --name factory-smoke -p 127.0.0.1:4173:4173 factory-studio:test
+          trap 'docker rm -f factory-smoke' EXIT
+          for attempt in {1..20}; do
+            if curl -fsS http://127.0.0.1:4173/healthz; then
+              curl -fsS http://127.0.0.1:4173/ | grep 'Factory Studio'
+              exit 0
+            fi
+            sleep 1
+          done
+          docker logs factory-smoke
+          exit 1

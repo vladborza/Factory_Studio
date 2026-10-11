@@ -1,0 +1,44 @@
+name: factory-studio
+x-service: &service
+  build:
+    context: .
+    dockerfile: services/Dockerfile
+  restart: unless-stopped
+  read_only: true
+  cap_drop: [ALL]
+  security_opt: ["no-new-privileges:true"]
+  networks: [backend]
+services:
+  app:
+    build: .
+    ports: ["127.0.0.1:4173:4173"]
+    environment:
+      CATALOG_URL: http://catalog:8080
+      SIMULATION_URL: http://simulation:8080
+      MODELS_URL: http://models:8080
+    depends_on:
+      catalog: {condition: service_healthy}
+      simulation: {condition: service_healthy}
+      models: {condition: service_healthy}
+    restart: unless-stopped
+    read_only: true
+    cap_drop: [ALL]
+    security_opt: ["no-new-privileges:true"]
+    networks: [frontend, backend]
+  catalog:
+    <<: *service
+    command: ["node", "services/catalog/server.mjs"]
+  simulation:
+    <<: *service
+    command: ["node", "services/simulation/server.mjs"]
+    mem_limit: 768m
+    cpus: 2
+  models:
+    <<: *service
+    command: ["node", "services/models/server.mjs"]
+    volumes: ["factory-models:/data"]
+networks:
+  frontend: {}
+  backend: {internal: true}
+volumes:
+  factory-models: {}

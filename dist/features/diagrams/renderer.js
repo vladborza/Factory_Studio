@@ -1,0 +1,43 @@
+import {appearance} from '../../ui/semantics.js';
+import {DIAGRAMS} from '../../core/mbse.js';
+import {TYPES,RELATIONS,PROCESS,POOLS,effective} from '../../core/model.js';
+const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const short=s=>s.length>27?s.slice(0,26)+'…':s;
+export function portPosition(n,id){const p=n.ports.find(p=>p.id===id),side=p.direction==='in'?0:190;const peers=n.ports.filter(q=>(q.direction==='in'?0:190)===side);return {x:side,y:20+peers.findIndex(q=>q.id===id)*18};}
+export function renderEngineeringDiagram(m,d,{zoom=1,selected='',selectedEdge='',portFrom=null,result=null,connectMode=false,connectFrom='',colorMode='family',focusSelection=false}={}){
+ const nodes=new Map(m.nodes.map(n=>[n.id,n])),positions=new Map(d.items.map(i=>[i.nodeId,i]));
+ const edges=m.edges.filter(e=>positions.has(e.from)&&positions.has(e.to)&&DIAGRAMS[d.kind].relations.includes(e.type));
+ const neighbors=new Set([selected,...edges.filter(e=>e.from===selected||e.to===selected).flatMap(e=>[e.from,e.to])]);
+ const sequence=d.kind==='sequence',maxOrder=Math.max(1,...edges.map(e=>e.order||1));
+ const width=Math.max(1450,...d.items.map(i=>i.x+250)),height=Math.max(720,...d.items.map(i=>i.y+180),sequence?Math.max(0,...d.items.map(i=>i.y))+180+maxOrder*40:0);
+ const point=(id,pid,output)=>{const i=positions.get(id),p=pid?portPosition(nodes.get(id),pid):{x:output?190:0,y:46};return{x:i.x+p.x,y:i.y+p.y}};
+ const defs=`<defs><marker id="arrowhead" markerWidth="10" markerHeight="10" refX="9" refY="5" orient="auto"><path d="M0 0 L10 5 L0 10" fill="#526174"/></marker><marker id="triangle" markerWidth="12" markerHeight="12" refX="11" refY="6" orient="auto"><path d="M1 1 L11 6 L1 11 Z" fill="white" stroke="#526174"/></marker><marker id="diamond" markerWidth="14" markerHeight="10" refX="1" refY="5" orient="auto-start-reverse"><path d="M1 5 L7 1 L13 5 L7 9 Z" fill="#526174"/></marker><marker id="hollow" markerWidth="14" markerHeight="10" refX="1" refY="5" orient="auto-start-reverse"><path d="M1 5 L7 1 L13 5 L7 9 Z" fill="white" stroke="#526174"/></marker><pattern id="dots" width="20" height="20" patternUnits="userSpaceOnUse"><circle cx="1" cy="1" r=".8" fill="#D8DFE8"/></pattern></defs>`;
+ const shapes=d.items.map(i=>{const n=nodes.get(i.nodeId),p=effective(m,n),active=selected===n.id,theme=appearance(n,colorMode),dim=focusSelection&&selected&&!neighbors.has(n.id);
+  const outline=`fill="${theme.tint}" stroke="${active?'#245DDB':theme.color}" stroke-width="${active?3:1.5}"`;
+  let body=`<rect width="190" height="100" rx="${n.type==='state'?20:4}" ${outline}/>`;
+  if(n.type==='useCase')body=`<ellipse cx="95" cy="50" rx="95" ry="50" ${outline}/>`;
+  if(n.type==='decision')body=`<path d="M95 0 L190 50 L95 100 L0 50 Z" ${outline}/>`;
+  if(n.type==='actor')body=`<rect width="190" height="100" fill="transparent"/><g stroke="#526174" fill="white"><circle cx="95" cy="12" r="10"/><path d="M95 22 V55 M70 35 H120 M95 55 L75 78 M95 55 L115 78"/></g>`;
+  if(['initial','final'].includes(n.type))body=`<rect width="190" height="100" fill="transparent"/><circle cx="95" cy="35" r="${n.type==='final'?20:16}" ${outline}/><circle cx="95" cy="35" r="14" fill="#182230"/>`;
+  if(n.type==='fork')body='<rect width="190" height="100" fill="transparent"/><rect x="5" y="25" width="180" height="8" fill="#182230"/>';
+  if(n.type==='package')body=`<path d="M0 20 V0 H80 V20 H190 V100 H0 Z" ${outline}/>`;
+  const special=['actor','initial','final','fork'].includes(n.type);
+  const subtitle=PROCESS.includes(n.type)?`${p.cycle}s · ${p.capacity} canal(e)`:POOLS.includes(n.type)?`${p.capacity} disponibil(e)`:n.type==='material'?`Stoc ${p.stock}`:n.type==='source'?`La ${p.interval}s`:(n.properties||[]).slice(0,1).map(p=>p.name+': '+p.type+' = '+p.value).join('');
+  const stereo=(n.stereotypes?.length?n.stereotypes:[n.type]).join(', ');
+  const ports=(n.ports||[]).map(p=>{const pos=portPosition(n,p.id);return `<g data-port="${esc(p.id)}" data-owner="${esc(n.id)}" tabindex="0" role="button" aria-label="Port ${esc(n.name+'.'+p.name)}"><rect x="${pos.x-6}" y="${pos.y-6}" width="12" height="12" fill="${portFrom?.port===p.id?'#e7a849':'#fff'}" stroke="#245DDB" stroke-width="2"/><title>${esc(p.name+' · '+p.direction+' · '+p.payload)}</title></g>`}).join('');
+  const utilization=result?.first?.operations.find(o=>o.id===n.id)?.busy;
+  return `<g class="diagram-node ${dim?'context-dim':''} ${connectFrom===n.id?'connection-source':''} ${active?'selected':''}" data-node="${esc(n.id)}" transform="translate(${i.x},${i.y})" tabindex="0" role="button" aria-label="${esc(n.name)}"><title>${esc(n.name+' · '+theme.label)}</title>${body}${!['useCase','decision','actor','initial','final','fork','package'].includes(n.type)?`<path d="M1 29 H189" stroke="${theme.color}" stroke-opacity=".3"/><rect x="1" y="1" width="4" height="98" rx="2" fill="${theme.color}"/>`:""}${sequence?`<path d="M95 100 V${height-i.y-30}" stroke="#a9b6ad" stroke-dasharray="6 5"/>`:''}${special?'':`<text x="95" y="23" text-anchor="middle" class="node-kind" style="fill:${theme.color}">${esc(theme.icon)} «${esc(short(stereo))}»</text>`}<text x="95" y="${special?95:48}" text-anchor="middle" class="node-name">${esc(short(n.name))}</text>${special?'':`<path d="M15 58 H175" stroke="#D8DFE8"/><text x="95" y="79" text-anchor="middle" class="node-info">${esc(short(subtitle))}</text>`}${utilization!=null?`<rect x="12" y="91" height="4" width="${166*utilization}" fill="#245DDB"/>`:''}${n.moflt?`<text x="176" y="94" text-anchor="end" class="node-level" fill="${theme.color}">${esc(n.moflt)}</text>`:''}${ports}<g data-connect-start="${esc(n.id)}" role="button" tabindex="0" aria-label="Conectează de la ${esc(n.name)}"><circle cx="211" cy="50" r="12" fill="#245DDB" stroke="white" stroke-width="2"/><path d="M205 50 H217 M211 44 V56" stroke="white" stroke-width="1.5" pointer-events="none"/></g></g>`;
+ }).join('');
+ const connections=edges.map(e=>{let a=point(e.from,e.fromPort,true),b=point(e.to,e.toPort,false),path;
+  if(sequence){a={x:positions.get(e.from).x+95,y:Math.max(...d.items.map(i=>i.y))+120+e.order*40};b={x:positions.get(e.to).x+95,y:a.y};}
+  if(e.from===e.to)path=`M${a.x} ${a.y} C${a.x+100} ${a.y-90} ${b.x-40} ${b.y-90} ${b.x} ${b.y}`;
+  else path=sequence?`M${a.x} ${a.y} L${b.x} ${b.y}`:`M${a.x} ${a.y} C${a.x+70} ${a.y} ${b.x-70} ${b.y} ${b.x} ${b.y}`;
+  const resource=['requires','staffedBy','allocated'].includes(e.type),data=['data','message','itemFlow','objectFlow'].includes(e.type);
+  const dashed=data||resource||['depends','realization','verify','satisfies','deriveReqt','refine','trace','copy','include','extend','packageImport'].includes(e.type);
+  const marker=['generalization','realization'].includes(e.type)?'triangle':'arrowhead',noArrow=['association','composition','aggregation','connector','binding','assemblyConnector'].includes(e.type);
+  const label=e.type==='flow'?`p:${e.weight} · ${e.delay}s`:e.type==='message'?`${e.order}: ${e.label||'message'}`:(e.label||RELATIONS[e.type])+(['requires','consumes','produces','staffedBy'].includes(e.type)?' ×'+e.quantity:'');
+  return `<g class="diagram-edge ${focusSelection&&selected&&e.from!==selected&&e.to!==selected?'context-dim':''}" data-edge="${esc(e.id)}"><path d="${path}" stroke="transparent" stroke-width="18" fill="none"/><path d="${path}" stroke="${selectedEdge===e.id?'#245DDB':data?'#8646B5':resource?'#52657A':'#526174'}" stroke-width="${selectedEdge===e.id?3:1.6}" fill="none" stroke-dasharray="${resource?'2 5':dashed?'6 4':''}" ${noArrow?'':`marker-end="url(#${marker})"`} ${['composition','aggregation'].includes(e.type)?`marker-start="url(#${e.type==='composition'?'diamond':'hollow'})"`:''}/><text x="${(a.x+b.x)/2}" y="${(a.y+b.y)/2-10}" text-anchor="middle" class="edge-label">${esc(label)}${e.guard?' ['+esc(e.guard)+']':''}</text><text x="${a.x+12}" y="${a.y+16}" class="node-info">${esc(e.sourceMultiplicity||'')}</text><text x="${b.x-25}" y="${b.y+16}" class="node-info">${esc(e.targetMultiplicity||'')}</text></g>`;
+ }).join('');
+ const hierarchy=d.kind==='structure'?d.items.filter(i=>nodes.get(i.nodeId).parent&&positions.has(nodes.get(i.nodeId).parent)).map(i=>{const a=positions.get(nodes.get(i.nodeId).parent);return `<path d="M${a.x+95} ${a.y+100} L${i.x+95} ${i.y}" stroke="#aab8ae" stroke-dasharray="5 5" fill="none"><title>Părinte în structură</title></path>`}).join(''):'';
+ return `<svg id="diagram-canvas" width="${width*zoom}" height="${height*zoom}" viewBox="0 0 ${width} ${height}" role="group" aria-label="Diagramă ${esc(d.name)}">${defs}<rect width="100%" height="100%" fill="url(#dots)"/>${hierarchy}${sequence?shapes+connections:connections+shapes}</svg>`;
+}
