@@ -1,3 +1,7 @@
+# Factory Studio - v0.5
+
+Faze manuale/automate, rezervare continuă a utilajelor, jurnal om-mașină și statistici pentru toate replicările. Vezi [Ghid v0.5](GHID_V05.md) și [Roadmap](ROADMAP.md).
+
 # Factory Studio — v0.4
 
 Interfețe pentru operator, inginer și management; 15 modele comerciale documentate și 49 de șabloane generice; conexiuni directe în diagrame; patru servicii Docker.

@@ -1,6 +1,6 @@
 # Factory Studio — Bibliografie & surse
 
-Trasabilitate documentară actualizată la 10 octombrie 2026. Fișele comerciale și referințele OMG erau deja în proiect. Motorul JavaScript este o implementare proprie: nu a fost portat dintr-o carte sau dintr-un simulator comercial și nu exista o bibliografie metodologică explicită în versiunea inițială. Referințele M1–M6 au fost consultate și adăugate la 10 octombrie 2026 pentru explicarea și evaluarea metodei; nu sunt prezentate drept surse consultate anterior implementării.
+Metoda implementată actualizată la 12 octombrie 2026 pentru v0.5; sursele externe rămân cele verificate la 10 octombrie. Fișele comerciale și referințele OMG erau deja în proiect. Motorul JavaScript este o implementare proprie: nu a fost portat dintr-o carte sau dintr-un simulator comercial și nu exista o bibliografie metodologică explicită în versiunea inițială. Referințele M1–M6 au fost consultate și adăugate la 10 octombrie 2026 pentru explicarea și evaluarea metodei; nu sunt prezentate drept surse consultate anterior implementării.
 
 ## Simulare, eficientizare și MBSE
 
@@ -22,7 +22,7 @@ Statut: Referință metodologică adăugată ulterior.
 
 [Deschide sursa](https://itl.nist.gov/div898/handbook/eda/section3/eda352.htm)
 
-Utilizare: Interpretarea intervalului mediei: media ± t × s / √n. În aplicație, n este numărul de replicări, iar rezultatul este producția bună.
+Utilizare: Interpretarea intervalului mediei: media ± t × s / √n. În aplicație, n este numărul de replicări, iar indicatorii includ producția, WIP, costul, energia și lead time (numai replicările cu produse finalizate).
 
 Limită: Valorile t sunt rotunjite; o replicare nu are interval. Seeduri diferite nu demonstrează independența statistică. Puține replicări sau distribuții asimetrice reduc fiabilitatea aproximării.
 
@@ -105,9 +105,14 @@ Trasabilitate: dist/core/network.js · Heap, simulateNetwork · M1
 Trasabilitate: dist/core/network.js · start; nu derivă din fișele utilajelor
 
 ### Resurse și personal
-Rezervare simultană la început. Operatorii alocați utilajului sunt ocupați pe întreg ciclul; necesarele directe și moștenite se adună. Nu există arbitraj optim de scheduling.
+Rezervare simultană la început. Fără faze, operatorii sunt ocupați pe întreg ciclul; cu faze, personalul este eliberat în automat, în timp ce resursele tehnice rămân rezervate inclusiv în așteptarea dintre faze; necesarele directe și moștenite se adună. Nu există arbitraj optim de scheduling.
 
 Trasabilitate: dist/core/mbse.js · expandedNeeds; dist/core/network.js · ready, start, release
+
+### Faze om–mașină
+Proporții din ciclul total, variație comună per piesă, setup numai în prima fază. Viteza depinde de resursele active; latența tehnică este inițială și latența personalului se aplică la rezervare. Defectările păstrează resursele fazei. Jurnal limitat la 2000 intervale, fără limitarea KPI.
+
+Trasabilitate: dist/core/phases.js; dist/core/network.js; tests/phases.test.mjs · cazuri calculate independent
 
 ### Rutare și buffere
 Ponderile ieșirilor aleg o singură rută. Buffer finit și blocare după procesare; rework poate consuma din nou material. Nu este fork/join Petri.
@@ -125,7 +130,7 @@ Debit = produse bune / ore. WIP final = intrări − bune − rebut. Coada medie
 Trasabilitate: dist/core/network.js · integrate și rezultate · M4 doar pentru interpretare
 
 ### Incertitudine
-Media producției și interval t aproximativ între replicări; seedul este schimbat între rulări. Nu se elimină automat perioada de încălzire.
+Medii și intervale t aproximative pentru toți indicatorii scalari raportați; seedul este schimbat între rulări. Nu se elimină automat perioada de încălzire.
 
 Trasabilitate: dist/core/network.js · replicate · M2
 

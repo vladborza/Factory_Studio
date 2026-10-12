@@ -1,3 +1,7 @@
+# Arhitectură v0.5
+
+Module noi: `dist/core/phases.js` (schema fazelor), `dist/core/statistics.js` (sumare), `dist/features/diagrams/phases.js` (editor), `dist/features/simulation/statistics.js` (raport). Motorul comun rulează aceleași faze în Web Worker și serviciul Docker. Ghid: [GHID_V05.md](GHID_V05.md).
+
 # Arhitectură v0.4
 
 ## Cod

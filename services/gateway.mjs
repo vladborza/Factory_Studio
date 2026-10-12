@@ -8,8 +8,8 @@ export function createServer({services={catalog:process.env.CATALOG_URL,simulati
  const send=(code,value)=>{res.writeHead(code,{'Content-Type':'application/json','Cache-Control':'no-store'});res.end(JSON.stringify(value))};
  try{
   const url=new URL(req.url,'http://localhost'),pathname=decodeURIComponent(url.pathname),docker=['catalog','simulation','models'].every(key=>Boolean(services[key]));
-  if(pathname==='/healthz'&&['GET','HEAD'].includes(req.method))return send(200,{status:'ok',version:'0.4.0',storage:docker?'docker-model-service':'browser-local'});
-  if(pathname==='/api/config'&&req.method==='GET')return send(200,{mode:docker?'docker':'browser',version:'0.4.0'});
+  if(pathname==='/healthz'&&['GET','HEAD'].includes(req.method))return send(200,{status:'ok',version:'0.5.0',storage:docker?'docker-model-service':'browser-local'});
+  if(pathname==='/api/config'&&req.method==='GET')return send(200,{mode:docker?'docker':'browser',version:'0.5.0'});
   if(pathname.startsWith('/api/')){
    const service=pathname==='/api/catalog'?'catalog':pathname==='/api/simulations'?'simulation':/^\/api\/models(?:\/[\w-]{1,80})?$/.test(pathname)?'models':null;
    if(!service||!services[service])return send(404,{error:'Serviciu indisponibil în acest mod.'});

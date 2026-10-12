@@ -20,3 +20,5 @@ table{font-variant-numeric:tabular-nums}th{color:#526174;background:#F1F4F8}td{b
 @media(min-width:1450px){.diagram-layout{grid-template-columns:165px minmax(280px,1fr) 280px}.inspector{grid-column:auto}.inspector form{display:block}}
 
 .bibliography-standalone{max-width:1100px;margin:30px auto;padding:0 22px}.bibliography-nav{display:flex;flex-wrap:wrap;gap:18px}.bibliography-download{padding:12px 16px;border-radius:6px;white-space:nowrap;text-decoration:none}.bibliography-standalone p,.bibliography-standalone li{line-height:1.7}section[id^="bibliography"]{scroll-margin-top:20px}section[id^="bibliography"] h3{margin-top:18px}section[id^="bibliography"] a{color:#245DDB}section[id^="bibliography"] .panel{margin-bottom:15px}
+
+.phase-summary {padding:12px;background:#f0f5fa;border:1px solid #cfdae5;border-radius:8px;margin:12px 0}.phase-summary ol {padding-left:20px}.phase-summary li {margin:8px 0} [data-phase-row] {border:1px solid #cfdae5;border-radius:8px;padding:12px;margin:12px 0} [data-phase-row] legend {font-weight:700;color:#244a69}
