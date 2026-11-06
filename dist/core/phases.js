@@ -1,7 +1,10 @@
+import {nativePhases,validateNativePhases} from './native-phases.js';
 // Phase fractions preserve the existing cycle parameter and its variable binding.
 // Changing the total cycle scales the phase durations proportionally.
 export const isHuman = n => ['person', 'team'].includes(n.type);
 export function validatePhases(n) {
+  if (n.phaseVersion !== undefined && ![1,2].includes(n.phaseVersion)) throw Error('Versiune de faze necunoscută.');
+  if (nativePhases(n)) return validateNativePhases(n);
   if (n.phases === undefined) return;
   if (!['operation', 'inspection', 'transport'].includes(n.type) || !Array.isArray(n.phases) || !n.phases.length || n.phases.length > 20)
     throw Error(n.name + ': definește 1–20 faze numai pe operații.');
@@ -24,6 +27,7 @@ export function setPhaseDurations(n, rows, note) {
   const phases = rows.map(({name, kind, seconds}) => ({name: name.trim(), kind, fraction: seconds / cycle}));
   validatePhases({...n, phases});
   if (!note?.trim()) throw Error('Documentează sursa sau ipoteza duratelor.');
+  n.phaseVersion = 1;
   n.phases = phases;
   n.params.cycle = cycle;
   delete n.bindings.cycle;

@@ -1,5 +1,9 @@
 # Factory Studio - v0.5
 
+## GitHub Pages: application and product ad
+
+Both are included in this repository. See [GitHub Pages setup](GITHUB_PAGES.md) to publish the application at `/Factory_Studio/` and the animated ad at `/Factory_Studio/ad/`. The Pages workflow tests the application before publishing. The ad source is in [`ad/`](ad/).
+
 Faze manuale/automate, rezervare continuă a utilajelor, jurnal om-mașină și statistici pentru toate replicările. Vezi [Ghid v0.5](GHID_V05.md) și [Roadmap](ROADMAP.md).
 
 # Factory Studio — v0.4
